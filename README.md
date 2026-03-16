@@ -49,6 +49,18 @@ Main public classes:
 Main public generator:
 - `generate_three_hinged_frame(...)`
 
+## Examples
+
+Run the small example scripts from the repository root with:
+
+```bash
+python examples/create_three_hinged_frame.py
+python examples/plot_three_hinged_frame.py
+```
+
+The plotting example generates a three-hinged frame, validates it, draws it
+with `plot_geometry_2d(...)`, and opens the matplotlib figure window.
+
 ## Development
 
 Run tests with:

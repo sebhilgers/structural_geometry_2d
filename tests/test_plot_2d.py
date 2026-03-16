@@ -24,6 +24,18 @@ def build_frame() -> StructuralGeometry2D:
     return generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
 
+def test_plot_geometry_2d_runs_without_error_for_valid_frame() -> None:
+    model = build_frame()
+
+    figure, axes = plot_geometry_2d(model)
+
+    try:
+        assert isinstance(figure, Figure)
+        assert isinstance(axes, Axes)
+    finally:
+        plt.close(figure)
+
+
 def test_plot_geometry_2d_draws_members_nodes_and_default_node_labels() -> None:
     model = build_frame()
 
@@ -104,6 +116,23 @@ def test_plot_geometry_2d_sets_equal_aspect_and_pads_geometry_limits() -> None:
         assert x_limits[1] > max(x_values)
         assert z_limits[0] < min(z_values)
         assert z_limits[1] > max(z_values)
+    finally:
+        plt.close(figure)
+
+
+def test_plot_geometry_2d_returns_figure_for_empty_geometry() -> None:
+    model = StructuralGeometry2D("EmptyFrame")
+
+    figure, axes = plot_geometry_2d(model)
+
+    try:
+        assert isinstance(figure, Figure)
+        assert isinstance(axes, Axes)
+        assert axes.get_xlim() == (-1.0, 1.0)
+        assert axes.get_ylim() == (-1.0, 1.0)
+        assert len(axes.lines) == 0
+        assert len(axes.patches) == 0
+        assert len(axes.texts) == 0
     finally:
         plt.close(figure)
 
