@@ -13,11 +13,11 @@ def test_generate_three_hinged_frame_creates_expected_node_coordinates() -> None
     model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
     assert [node.to_dict() for node in model.nodes] == [
-        {"id": "N1", "x": 0.0, "z": 0.0},
-        {"id": "N2", "x": 0.0, "z": 5.0},
-        {"id": "N3", "x": 10.0, "z": 8.0},
-        {"id": "N4", "x": 20.0, "z": 5.0},
-        {"id": "N5", "x": 20.0, "z": 0.0},
+        {"name": "N1", "id": "", "x": 0.0, "y": 0.0, "z": 0.0},
+        {"name": "N2", "id": "", "x": 0.0, "y": 0.0, "z": 5.0},
+        {"name": "N3", "id": "", "x": 10.0, "y": 0.0, "z": 8.0},
+        {"name": "N4", "id": "", "x": 20.0, "y": 0.0, "z": 5.0},
+        {"name": "N5", "id": "", "x": 20.0, "y": 0.0, "z": 0.0},
     ]
 
 

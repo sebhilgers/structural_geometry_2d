@@ -30,7 +30,9 @@ def plot_geometry_2d(
     geometry.validate()
 
     figure, axes = plt.subplots()
-    node_by_id = {node.id: node for node in geometry.nodes}
+    # Members and supports still reference nodes by ID strings. When a node has
+    # no explicit ID yet, its name acts as the fallback reference token.
+    node_by_id = {node.reference_id: node for node in geometry.nodes}
 
     reference_length = _get_reference_length(geometry.nodes)
     label_offset = max(reference_length * 0.02, 0.1)
@@ -65,7 +67,7 @@ def plot_geometry_2d(
             axes.text(
                 node.x + label_offset,
                 node.z + label_offset,
-                node.id,
+                node.name,
                 color="black",
                 ha="left",
                 va="bottom",

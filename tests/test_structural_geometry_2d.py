@@ -24,7 +24,10 @@ def build_valid_model() -> StructuralGeometry2D:
     # reference geometry and support conditions.
     return StructuralGeometry2D(
         "Frame1",
-        nodes=[Node("N1", 0.0, 0.0), Node("N2", 0.0, 5.0)],
+        nodes=[
+            Node("LeftBase", 0.0, 0.0, id="N1"),
+            Node("LeftEaves", 0.0, 5.0, id="N2"),
+        ],
         members=[LineMember("M1", "N1", "N2", "column")],
         supports=[Support("S1", "N1", "fixed", "fixed", "free")],
     )
@@ -36,8 +39,8 @@ def test_structural_geometry_2d_to_dict_repr_and_json() -> None:
     assert model.to_dict() == {
         "id": "Frame1",
         "nodes": [
-            {"id": "N1", "x": 0.0, "z": 0.0},
-            {"id": "N2", "x": 0.0, "z": 5.0},
+            {"name": "LeftBase", "id": "N1", "x": 0.0, "y": 0.0, "z": 0.0},
+            {"name": "LeftEaves", "id": "N2", "x": 0.0, "y": 0.0, "z": 5.0},
         ],
         "members": [
             {"id": "M1", "start_node_id": "N1", "end_node_id": "N2", "type": "column"}
@@ -76,6 +79,17 @@ def test_structural_geometry_2d_rejects_invalid_structure_identifier(structure_i
 
 def test_structural_geometry_2d_validate_accepts_valid_model() -> None:
     model = build_valid_model()
+
+    model.validate()
+
+
+def test_structural_geometry_2d_validate_accepts_name_fallback_when_node_id_is_empty() -> None:
+    model = StructuralGeometry2D(
+        "Frame1",
+        nodes=[Node("N1", 0.0, 0.0), Node("N2", 0.0, 5.0)],
+        members=[LineMember("M1", "N1", "N2", "column")],
+        supports=[Support("S1", "N1", "fixed", "fixed", "free")],
+    )
 
     model.validate()
 
@@ -143,7 +157,7 @@ def test_structural_geometry_2d_validate_rejects_missing_end_node_reference_in_m
 def test_structural_geometry_2d_validate_rejects_missing_node_reference_in_support() -> None:
     model = StructuralGeometry2D(
         "Frame1",
-        nodes=[Node("N1", 0.0, 0.0)],
+        nodes=[Node("NodeOne", 0.0, 0.0, id="N1")],
         supports=[Support("S1", "N2", "fixed", "fixed", "free")],
     )
 

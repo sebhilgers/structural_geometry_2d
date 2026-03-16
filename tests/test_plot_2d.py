@@ -54,7 +54,7 @@ def test_plot_geometry_2d_draws_members_nodes_and_default_node_labels() -> None:
         assert len(node_lines) == 1
         assert list(node_lines[0].get_xdata()) == [node.x for node in model.nodes]
         assert list(node_lines[0].get_ydata()) == [node.z for node in model.nodes]
-        assert {text.get_text() for text in axes.texts} == {node.id for node in model.nodes}
+        assert {text.get_text() for text in axes.texts} == {node.name for node in model.nodes}
         assert len(axes.patches) == 0
     finally:
         plt.close(figure)
@@ -76,7 +76,7 @@ def test_plot_geometry_2d_optionally_draws_member_ids_and_support_symbols() -> N
             < min(node.z for node in model.nodes)
         ]
 
-        assert {node.id for node in model.nodes}.issubset(plotted_labels)
+        assert {node.name for node in model.nodes}.issubset(plotted_labels)
         assert {member.id for member in model.members}.issubset(plotted_labels)
         assert len(support_triangles) == len(model.supports)
         assert len(support_base_lines) == 1
@@ -186,7 +186,12 @@ def test_plot_geometry_2d_places_support_triangle_apex_at_node() -> None:
 
     try:
         support_triangles = [patch for patch in axes.patches if isinstance(patch, Polygon)]
-        support_nodes = {support.node_id: next(node for node in model.nodes if node.id == support.node_id) for support in model.supports}
+        support_nodes = {
+            support.node_id: next(
+                node for node in model.nodes if node.reference_id == support.node_id
+            )
+            for support in model.supports
+        }
         apex_points = {
             (round(float(patch.get_xy()[0][0]), 6), round(float(patch.get_xy()[0][1]), 6))
             for patch in support_triangles

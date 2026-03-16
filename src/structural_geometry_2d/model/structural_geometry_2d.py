@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from structural_geometry_2d.exceptions import (
     DuplicateIdentifierError,
@@ -70,11 +70,17 @@ class StructuralGeometry2D:
 
     def validate(self) -> None:
         """Validate container-level ID uniqueness and reference integrity."""
-        self._raise_if_duplicates(self.nodes, "node")
+        self._raise_if_duplicates(
+            self.nodes,
+            "node",
+            identifier_getter=lambda node: node.reference_id,
+        )
         self._raise_if_duplicates(self.members, "member")
         self._raise_if_duplicates(self.supports, "support")
 
-        node_ids = {node.id for node in self.nodes}
+        # Nodes still participate in ID-based relationships. When an explicit
+        # node ID is blank, the node name becomes the reference token.
+        node_ids = {node.reference_id for node in self.nodes}
 
         for member in self.members:
             if member.start_node_id == member.end_node_id:
@@ -118,10 +124,15 @@ class StructuralGeometry2D:
         return structure_id
 
     @staticmethod
-    def _raise_if_duplicates(items: Iterable[Any], item_label: str) -> None:
+    def _raise_if_duplicates(
+        items: Iterable[Any],
+        item_label: str,
+        identifier_getter: Callable[[Any], str] | None = None,
+    ) -> None:
         seen_ids: set[str] = set()
+        get_identifier = identifier_getter or (lambda item: item.id)
         for item in items:
-            item_id = item.id
+            item_id = get_identifier(item)
             if item_id in seen_ids:
                 raise DuplicateIdentifierError(
                     f"Duplicate {item_label} ID detected: {item_id!r}."
