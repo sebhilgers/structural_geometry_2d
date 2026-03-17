@@ -14,25 +14,25 @@ def test_line_member_creation_and_serialization() -> None:
     # affecting the normalized value stored in the model.
     member = LineMember("M1", "N1", "N2", "  column  ")
 
-    assert member.id == "M1"
-    assert member.start_node_id == "N1"
-    assert member.end_node_id == "N2"
+    assert member.name == "M1"
+    assert member.start_node == "N1"
+    assert member.end_node == "N2"
     assert member.member_type == "column"
     assert member.type == "column"
     assert member.to_dict() == {
-        "id": "M1",
-        "start_node_id": "N1",
-        "end_node_id": "N2",
+        "name": "M1",
+        "start_node": "N1",
+        "end_node": "N2",
         "type": "column",
     }
     assert (
         repr(member)
-        == "LineMember(id='M1', start_node_id='N1', end_node_id='N2', member_type='column')"
+        == "LineMember(name='M1', start_node='N1', end_node='N2', member_type='column')"
     )
 
 
 @pytest.mark.parametrize(
-    ("member_id", "start_node_id", "end_node_id"),
+    ("name", "start_node", "end_node"),
     [
         (None, "N1", "N2"),
         ("", "N1", "N2"),
@@ -49,14 +49,14 @@ def test_line_member_creation_and_serialization() -> None:
     ],
 )
 def test_line_member_rejects_invalid_identifiers(
-    member_id: object,
-    start_node_id: object,
-    end_node_id: object,
+    name: object,
+    start_node: object,
+    end_node: object,
 ) -> None:
     # The constructor validates every identifier because container validation
-    # assumes member and reference IDs already have a supported format.
+    # assumes member and node names already have a supported format.
     with pytest.raises(InvalidIdentifierError):
-        LineMember(member_id, start_node_id, end_node_id, "column")
+        LineMember(name, start_node, end_node, "column")
 
 
 def test_line_member_rejects_same_start_and_end_node() -> None:

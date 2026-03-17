@@ -14,14 +14,14 @@ _ALLOWED_RESTRAINTS = {"fixed", "free"}
 
 
 class Support:
-    """Represents support restraints attached to a node by ID."""
+    """Represents support restraints attached to a node by name."""
 
-    def __init__(self, support_id: str, node_id: str, ux: str, uz: str, ry: str) -> None:
-        # Support objects are intentionally simple: one ID, one node reference,
-        # and explicit restraint states for the x translation, z translation,
-        # and y rotation degrees of freedom used by the x-z plane convention.
-        self.id = self._validate_id("Support ID", support_id)
-        self.node_id = self._validate_id("Node ID", node_id)
+    def __init__(self, name: str, node_name: str, ux: str, uz: str, ry: str) -> None:
+        # Support objects are intentionally simple: one support identifier, one
+        # node-name reference, and explicit restraint states for the x
+        # translation, z translation, and y rotation degrees of freedom.
+        self.name = self._validate_name("Support ID", name)
+        self.node_name = self._validate_name("Node name", node_name)
         self.ux = self._validate_restraint("ux", ux)
         self.uz = self._validate_restraint("uz", uz)
         self.ry = self._validate_restraint("ry", ry)
@@ -29,8 +29,8 @@ class Support:
     def __repr__(self) -> str:
         return (
             "Support("
-            f"id={self.id!r}, "
-            f"node_id={self.node_id!r}, "
+            f"support_name={self.name!r}, "
+            f"node_name={self.node_name!r}, "
             f"ux={self.ux!r}, "
             f"uz={self.uz!r}, "
             f"ry={self.ry!r})"
@@ -39,15 +39,15 @@ class Support:
     def to_dict(self) -> dict[str, Any]:
         """Return a plain dictionary for debugging and JSON serialization."""
         return {
-            "id": self.id,
-            "node_id": self.node_id,
+            "name": self.name,
+            "node_name": self.node_name,
             "ux": self.ux,
             "uz": self.uz,
             "ry": self.ry,
         }
 
     @staticmethod
-    def _validate_id(label: str, value: str) -> str:
+    def _validate_name(label: str, value: str) -> str:
         if not isinstance(value, str):
             raise InvalidIdentifierError(f"{label} must be a string.")
         if not value:

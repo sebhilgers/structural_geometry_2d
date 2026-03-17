@@ -9,37 +9,43 @@ from typing import Any
 from structural_geometry_2d.exceptions import InvalidGeometryError, InvalidIdentifierError
 
 
-_ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 class LineMember:
-    """Represents a straight member defined by start and end node IDs."""
+    """Represents a straight member defined by name and node names."""
 
     def __init__(
         self,
-        member_id: str,
-        start_node_id: str,
-        end_node_id: str,
+        name: str,
+        start_node: str,
+        end_node: str,
         member_type: str,
     ) -> None:
-        # Member IDs and node references are all explicit strings because the
-        # package keeps relationships ID-based instead of object-linked.
-        self.id = self._validate_id("Member ID", member_id)
-        self.start_node_id = self._validate_id("Start node ID", start_node_id)
-        self.end_node_id = self._validate_id("End node ID", end_node_id)
+        # Members now follow the same public naming pattern as nodes. The name
+        # is still validated like an identifier because it is also the stable
+        # token used by validation, plotting labels, and serialization.
+        self.name = self._validate_name(name)
+        self.start_node = self._validate_id("Start node name", start_node)
+        self.end_node = self._validate_id("End node name", end_node)
         self.member_type = self._validate_member_type(member_type)
 
-        if self.start_node_id == self.end_node_id:
-            raise InvalidGeometryError("Member start and end node IDs must differ.")
+        if self.start_node == self.end_node:
+            raise InvalidGeometryError("Member start and end node names must differ.")
 
     def __repr__(self) -> str:
         return (
             "LineMember("
-            f"id={self.id!r}, "
-            f"start_node_id={self.start_node_id!r}, "
-            f"end_node_id={self.end_node_id!r}, "
+            f"name={self.name!r}, "
+            f"start_node={self.start_node!r}, "
+            f"end_node={self.end_node!r}, "
             f"member_type={self.member_type!r})"
         )
+
+    @property
+    def id(self) -> str:
+        """Provide a backward-compatible alias while the API moves to name."""
+        return self.name
 
     @property
     def type(self) -> str:
@@ -49,11 +55,23 @@ class LineMember:
     def to_dict(self) -> dict[str, Any]:
         """Return a plain dictionary for debugging and JSON serialization."""
         return {
-            "id": self.id,
-            "start_node_id": self.start_node_id,
-            "end_node_id": self.end_node_id,
+            "name": self.name,
+            "start_node": self.start_node,
+            "end_node": self.end_node,
             "type": self.member_type,
         }
+
+    @staticmethod
+    def _validate_name(name: str) -> str:
+        if not isinstance(name, str):
+            raise InvalidIdentifierError("Member name must be a string.")
+        if not name:
+            raise InvalidIdentifierError("Member name must not be empty.")
+        if _NAME_PATTERN.fullmatch(name) is None:
+            raise InvalidIdentifierError(
+                f"Member name {name!r} must start with a letter and contain only letters, digits, or underscores."
+            )
+        return name
 
     @staticmethod
     def _validate_id(label: str, value: str) -> str:
@@ -61,7 +79,7 @@ class LineMember:
             raise InvalidIdentifierError(f"{label} must be a string.")
         if not value:
             raise InvalidIdentifierError(f"{label} must not be empty.")
-        if _ID_PATTERN.fullmatch(value) is None:
+        if _NAME_PATTERN.fullmatch(value) is None:
             raise InvalidIdentifierError(
                 f"{label} {value!r} must start with a letter and contain only letters, digits, or underscores."
             )

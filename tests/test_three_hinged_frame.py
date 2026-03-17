@@ -13,11 +13,11 @@ def test_generate_three_hinged_frame_creates_expected_node_coordinates() -> None
     model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
     assert [node.to_dict() for node in model.nodes] == [
-        {"name": "N1", "id": "", "x": 0.0, "y": 0.0, "z": 0.0},
-        {"name": "N2", "id": "", "x": 0.0, "y": 0.0, "z": 5.0},
-        {"name": "N3", "id": "", "x": 10.0, "y": 0.0, "z": 8.0},
-        {"name": "N4", "id": "", "x": 20.0, "y": 0.0, "z": 5.0},
-        {"name": "N5", "id": "", "x": 20.0, "y": 0.0, "z": 0.0},
+        {"name": "N1", "x": 0.0, "y": 0.0, "z": 0.0},
+        {"name": "N2", "x": 0.0, "y": 0.0, "z": 5.0},
+        {"name": "N3", "x": 10.0, "y": 0.0, "z": 8.0},
+        {"name": "N4", "x": 20.0, "y": 0.0, "z": 5.0},
+        {"name": "N5", "x": 20.0, "y": 0.0, "z": 0.0},
     ]
 
 
@@ -25,10 +25,10 @@ def test_generate_three_hinged_frame_creates_expected_member_types() -> None:
     model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
     assert [member.to_dict() for member in model.members] == [
-        {"id": "M1", "start_node_id": "N1", "end_node_id": "N2", "type": "column"},
-        {"id": "M2", "start_node_id": "N2", "end_node_id": "N3", "type": "rafter"},
-        {"id": "M3", "start_node_id": "N3", "end_node_id": "N4", "type": "rafter"},
-        {"id": "M4", "start_node_id": "N4", "end_node_id": "N5", "type": "column"},
+        {"name": "M1", "start_node": "N1", "end_node": "N2", "type": "column"},
+        {"name": "M2", "start_node": "N2", "end_node": "N3", "type": "rafter"},
+        {"name": "M3", "start_node": "N3", "end_node": "N4", "type": "rafter"},
+        {"name": "M4", "start_node": "N4", "end_node": "N5", "type": "column"},
     ]
 
 
@@ -36,8 +36,8 @@ def test_generate_three_hinged_frame_creates_expected_support_conditions() -> No
     model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
     assert [support.to_dict() for support in model.supports] == [
-        {"id": "S1", "node_id": "N1", "ux": "fixed", "uz": "fixed", "ry": "free"},
-        {"id": "S2", "node_id": "N5", "ux": "free", "uz": "fixed", "ry": "free"},
+        {"id": "S1", "node_name": "N1", "ux": "fixed", "uz": "fixed", "ry": "free"},
+        {"id": "S2", "node_name": "N5", "ux": "free", "uz": "fixed", "ry": "free"},
     ]
 
 

@@ -49,7 +49,7 @@ def generate_three_hinged_frame(
     ]
 
     model = StructuralGeometry2D(
-        structure_id=structure_id,
+        structure_name=structure_id,
         nodes=nodes,
         members=members,
         supports=supports,

@@ -37,7 +37,7 @@ def main() -> None:
 
     # The plotting helper already enforces equal x-z scaling. The title and
     # member labels make the resulting figure easier to read when opened.
-    figure, axes = plot_geometry_2d(frame, show_member_ids=True)
+    figure, axes = plot_geometry_2d(frame, show_member_names=True)
     axes.set_title("Three-Hinged Frame")
     figure.tight_layout()
     plt.show()

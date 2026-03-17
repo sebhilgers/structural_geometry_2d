@@ -14,23 +14,23 @@ def test_support_creation_and_serialization() -> None:
     # readable input without changing the stored public state.
     support = Support("S1", "N1", " Fixed ", "FIXED", " free ")
 
-    assert support.id == "S1"
-    assert support.node_id == "N1"
+    assert support.name == "S1"
+    assert support.node_name == "N1"
     assert support.ux == "fixed"
     assert support.uz == "fixed"
     assert support.ry == "free"
     assert support.to_dict() == {
         "id": "S1",
-        "node_id": "N1",
+        "node_name": "N1",
         "ux": "fixed",
         "uz": "fixed",
         "ry": "free",
     }
-    assert repr(support) == "Support(id='S1', node_id='N1', ux='fixed', uz='fixed', ry='free')"
+    assert repr(support) == "Support(id='S1', node_name='N1', ux='fixed', uz='fixed', ry='free')"
 
 
 @pytest.mark.parametrize(
-    ("support_id", "node_id"),
+    ("support_id", "node_name"),
     [
         (None, "N1"),
         ("", "N1"),
@@ -42,11 +42,11 @@ def test_support_creation_and_serialization() -> None:
         ("S1", "N-1"),
     ],
 )
-def test_support_rejects_invalid_identifiers(support_id: object, node_id: object) -> None:
-    # Support IDs and node references use the same validation contract because
-    # support connectivity is expressed only through string identifiers.
+def test_support_rejects_invalid_identifiers(support_id: object, node_name: object) -> None:
+    # Support IDs and node-name references use the same validation contract
+    # because support connectivity is expressed only through explicit strings.
     with pytest.raises(InvalidIdentifierError):
-        Support(support_id, node_id, "fixed", "fixed", "free")
+        Support(support_id, node_name, "fixed", "fixed", "free")
 
 
 @pytest.mark.parametrize(

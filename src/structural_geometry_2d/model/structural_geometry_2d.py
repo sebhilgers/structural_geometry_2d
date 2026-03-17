@@ -18,7 +18,7 @@ from structural_geometry_2d.model.node import Node
 from structural_geometry_2d.model.support import Support
 
 
-_ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 class StructuralGeometry2D:
@@ -26,14 +26,14 @@ class StructuralGeometry2D:
 
     def __init__(
         self,
-        structure_id: str = "SG2D",
+        structure_name: str = "SG2D",
         nodes: Iterable[Node] | None = None,
         members: Iterable[LineMember] | None = None,
         supports: Iterable[Support] | None = None,
     ) -> None:
         # The container also has an ID so that a serialized model has a stable
         # top-level name without needing extra wrapper objects.
-        self.id = self._validate_id(structure_id)
+        self.name = self._validate_name(structure_name)
 
         # Incoming iterables are copied into plain lists to keep the container
         # predictable and free from hidden aliasing side effects.
@@ -44,7 +44,7 @@ class StructuralGeometry2D:
     def __repr__(self) -> str:
         return (
             "StructuralGeometry2D("
-            f"id={self.id!r}, "
+            f"id={self.name!r}, "
             f"nodes={len(self.nodes)}, "
             f"members={len(self.members)}, "
             f"supports={len(self.supports)})"
@@ -69,34 +69,52 @@ class StructuralGeometry2D:
         self.supports.append(support)
 
     def validate(self) -> None:
-        """Validate container-level ID uniqueness and reference integrity."""
+        """Validate container-level uniqueness and name-based reference integrity."""
         self._raise_if_duplicates(
             self.nodes,
             "node",
-            identifier_getter=lambda node: node.reference_id,
+            identifier_getter=lambda node: node.name,
         )
-        self._raise_if_duplicates(self.members, "member")
+        self._raise_if_duplicates(
+            self.members,
+            "member",
+            identifier_getter=lambda member: member.name,
+        )
         self._raise_if_duplicates(self.supports, "support")
 
-        # Nodes still participate in ID-based relationships. When an explicit
-        # node ID is blank, the node name becomes the reference token.
-        node_ids = {node.reference_id for node in self.nodes}
+        # Members and supports reference nodes only by node name in v0.1.
+        node_names = {node.name for node in self.nodes}
 
         for member in self.members:
-            if member.start_node_id == member.end_node_id:
+            if member.start_node == member.end_node:
                 raise InvalidGeometryError(
-                    f"Member {member.id!r} must not use the same start and end node ID."
+                    f"Member {member.name!r} must not use the same start and end node name."
                 )
-            self._raise_if_missing_reference(member.id, "start_node_id", member.start_node_id, node_ids)
-            self._raise_if_missing_reference(member.id, "end_node_id", member.end_node_id, node_ids)
+            self._raise_if_missing_reference(
+                member.name,
+                "start_node",
+                member.start_node,
+                node_names,
+            )
+            self._raise_if_missing_reference(
+                member.name,
+                "end_node",
+                member.end_node,
+                node_names,
+            )
 
         for support in self.supports:
-            self._raise_if_missing_reference(support.id, "node_id", support.node_id, node_ids)
+            self._raise_if_missing_reference(
+                support.name,
+                "node_name",
+                support.node_name,
+                node_names,
+            )
 
     def to_dict(self) -> dict[str, Any]:
         """Return a fully serializable representation of the container."""
         return {
-            "id": self.id,
+            "id": self.name,
             "nodes": [node.to_dict() for node in self.nodes],
             "members": [member.to_dict() for member in self.members],
             "supports": [support.to_dict() for support in self.supports],
@@ -112,16 +130,16 @@ class StructuralGeometry2D:
         return self.members
 
     @staticmethod
-    def _validate_id(structure_id: str) -> str:
-        if not isinstance(structure_id, str):
-            raise InvalidIdentifierError("Structure ID must be a string.")
-        if not structure_id:
-            raise InvalidIdentifierError("Structure ID must not be empty.")
-        if _ID_PATTERN.fullmatch(structure_id) is None:
+    def _validate_name(structure_name: str) -> str:
+        if not isinstance(structure_name, str):
+            raise InvalidIdentifierError("Structure name must be a string.")
+        if not structure_name:
+            raise InvalidIdentifierError("Structure name must not be empty.")
+        if _NAME_PATTERN.fullmatch(structure_name) is None:
             raise InvalidIdentifierError(
-                f"Structure ID {structure_id!r} must start with a letter and contain only letters, digits, or underscores."
+                f"Structure name {structure_name!r} must start with a letter and contain only letters, digits, or underscores."
             )
-        return structure_id
+        return structure_name
 
     @staticmethod
     def _raise_if_duplicates(
@@ -129,24 +147,25 @@ class StructuralGeometry2D:
         item_label: str,
         identifier_getter: Callable[[Any], str] | None = None,
     ) -> None:
-        seen_ids: set[str] = set()
-        get_identifier = identifier_getter or (lambda item: item.id)
+        seen_names: set[str] = set()
+        get_identifier = identifier_getter or (lambda item: item.name)
         for item in items:
-            item_id = get_identifier(item)
-            if item_id in seen_ids:
+            item_name = get_identifier(item)
+            if item_name in seen_names:
+                duplicate_field = "name" if item_label in {"node", "member"} else "ID"
                 raise DuplicateIdentifierError(
-                    f"Duplicate {item_label} ID detected: {item_id!r}."
+                    f"Duplicate {item_label} {duplicate_field} detected: {item_name!r}."
                 )
-            seen_ids.add(item_id)
+            seen_names.add(item_name)
 
     @staticmethod
     def _raise_if_missing_reference(
-        owner_id: str,
+        owner_name: str,
         field_name: str,
-        referenced_id: str,
-        valid_ids: set[str],
+        referenced_name: str,
+        valid_names: set[str],
     ) -> None:
-        if referenced_id not in valid_ids:
+        if referenced_name not in valid_names:
             raise MissingReferenceError(
-                f"Object {owner_id!r} references missing {field_name} {referenced_id!r}."
+                f"Object {owner_name!r} references missing {field_name} {referenced_name!r}."
             )

@@ -60,10 +60,10 @@ def test_plot_geometry_2d_draws_members_nodes_and_default_node_labels() -> None:
         plt.close(figure)
 
 
-def test_plot_geometry_2d_optionally_draws_member_ids_and_support_symbols() -> None:
+def test_plot_geometry_2d_optionally_draws_member_names_and_support_symbols() -> None:
     model = build_frame()
 
-    figure, axes = plot_geometry_2d(model, show_member_ids=True)
+    figure, axes = plot_geometry_2d(model, show_member_names=True)
 
     try:
         plotted_labels = {text.get_text() for text in axes.texts}
@@ -77,7 +77,7 @@ def test_plot_geometry_2d_optionally_draws_member_ids_and_support_symbols() -> N
         ]
 
         assert {node.name for node in model.nodes}.issubset(plotted_labels)
-        assert {member.id for member in model.members}.issubset(plotted_labels)
+        assert {member.name for member in model.members}.issubset(plotted_labels)
         assert len(support_triangles) == len(model.supports)
         assert len(support_base_lines) == 1
     finally:
@@ -89,8 +89,8 @@ def test_plot_geometry_2d_can_hide_node_and_member_identifiers() -> None:
 
     figure, axes = plot_geometry_2d(
         model,
-        show_node_ids=False,
-        show_member_ids=False,
+        show_node_names=False,
+        show_member_names=False,
         show_supports=False,
     )
 
@@ -139,7 +139,7 @@ def test_plot_geometry_2d_returns_figure_for_empty_geometry() -> None:
 
 def test_plot_geometry_2d_draws_members_correctly_in_arbitrary_order() -> None:
     # Members are intentionally added out of geometric order to verify that the
-    # plotting code resolves node coordinates by ID rather than by list position.
+    # plotting code resolves node coordinates by name rather than by list position.
     model = StructuralGeometry2D(
         "Frame1",
         nodes=[
@@ -182,13 +182,13 @@ def test_plot_geometry_2d_draws_members_correctly_in_arbitrary_order() -> None:
 def test_plot_geometry_2d_places_support_triangle_apex_at_node() -> None:
     model = build_frame()
 
-    figure, axes = plot_geometry_2d(model, show_node_ids=False, show_member_ids=False)
+    figure, axes = plot_geometry_2d(model, show_node_names=False, show_member_names=False)
 
     try:
         support_triangles = [patch for patch in axes.patches if isinstance(patch, Polygon)]
         support_nodes = {
-            support.node_id: next(
-                node for node in model.nodes if node.reference_id == support.node_id
+            support.node_name: next(
+                node for node in model.nodes if node.name == support.node_name
             )
             for support in model.supports
         }

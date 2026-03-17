@@ -15,8 +15,8 @@ from structural_geometry_2d.model.support import Support
 
 def plot_geometry_2d(
     geometry: StructuralGeometry2D,
-    show_node_ids: bool = True,
-    show_member_ids: bool = False,
+    show_node_names: bool = True,
+    show_member_names: bool = False,
     show_supports: bool = True,
 ) -> tuple[Figure, Axes]:
     """Draw a simple x-z sketch of the structural geometry with matplotlib."""
@@ -30,17 +30,16 @@ def plot_geometry_2d(
     geometry.validate()
 
     figure, axes = plt.subplots()
-    # Members and supports still reference nodes by ID strings. When a node has
-    # no explicit ID yet, its name acts as the fallback reference token.
-    node_by_id = {node.reference_id: node for node in geometry.nodes}
+    # Member and support connectivity is resolved directly by node name.
+    node_by_name = {node.name: node for node in geometry.nodes}
 
     reference_length = _get_reference_length(geometry.nodes)
     label_offset = max(reference_length * 0.02, 0.1)
     support_offset = max(reference_length * 0.04, 0.2)
 
     for member in geometry.members:
-        start_node = node_by_id[member.start_node_id]
-        end_node = node_by_id[member.end_node_id]
+        start_node = node_by_name[member.start_node]
+        end_node = node_by_name[member.end_node]
         axes.plot(
             [start_node.x, end_node.x],
             [start_node.z, end_node.z],
@@ -48,13 +47,13 @@ def plot_geometry_2d(
             linewidth=1.5,
         )
 
-        if show_member_ids:
+        if show_member_names:
             midpoint_x = (start_node.x + end_node.x) / 2.0
             midpoint_z = (start_node.z + end_node.z) / 2.0
             axes.text(
                 midpoint_x,
                 midpoint_z + (label_offset * 0.5),
-                member.id,
+                member.name,
                 color="black",
                 ha="center",
                 va="bottom",
@@ -62,7 +61,7 @@ def plot_geometry_2d(
 
     _plot_nodes(axes, geometry.nodes)
 
-    if show_node_ids:
+    if show_node_names:
         for node in geometry.nodes:
             axes.text(
                 node.x + label_offset,
@@ -75,7 +74,7 @@ def plot_geometry_2d(
 
     if show_supports:
         for support in geometry.supports:
-            supported_node = node_by_id[support.node_id]
+            supported_node = node_by_name[support.node_name]
             _draw_support_symbol(axes, supported_node, support, support_offset)
 
     _configure_axes(
