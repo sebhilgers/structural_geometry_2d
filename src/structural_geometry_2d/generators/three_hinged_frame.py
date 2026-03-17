@@ -6,6 +6,7 @@ from __future__ import annotations
 import math
 
 from structural_geometry_2d.exceptions import InvalidGeometryError
+from structural_geometry_2d.model.connections import Member_connection
 from structural_geometry_2d.model.line_member import LineMember
 from structural_geometry_2d.model.node import Node
 from structural_geometry_2d.model.structural_geometry_2d import StructuralGeometry2D
@@ -44,8 +45,16 @@ def generate_three_hinged_frame(
     ]
 
     supports = [
-        Support("S1", "N1", "fixed", "fixed", "free"),
-        Support("S2", "N5", "free", "fixed", "free"),
+        # The generated frame remains an x-z model, so both supports restrain
+        # the out-of-plane y translation while keeping all rotations released.
+        Support("S1", "N1", "fixed", "fixed", "fixed", "free", "free", "free"),
+        Support("S2", "N5", "free", "fixed", "fixed", "free", "free", "free"),
+    ]
+    connections = [
+        # The ridge hinge is represented by one released local-y rotation at the
+        # end of the left rafter and the start of the right rafter.
+        Member_connection("C1", "M2", "end", "rigid", "rigid", "rigid", "rigid", "free", "rigid"),
+        # Member_connection("C2", "M3", "start", "rigid", "rigid", "rigid", "rigid", "free", "rigid"),
     ]
 
     model = StructuralGeometry2D(
@@ -53,6 +62,7 @@ def generate_three_hinged_frame(
         nodes=nodes,
         members=members,
         supports=supports,
+        connections=connections,
     )
     model.validate()
     return model

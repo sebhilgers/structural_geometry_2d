@@ -36,9 +36,10 @@ def main() -> None:
     frame.validate()
 
     # The plotting helper already enforces equal x-z scaling. The title and
-    # member labels make the resulting figure easier to read when opened.
+    # member labels make the resulting figure easier to read when opened, and
+    # the hollow circle at the ridge shows the generated member connections.
     figure, axes = plot_geometry_2d(frame, show_member_names=True)
-    axes.set_title("Three-Hinged Frame")
+    axes.set_title("Three-Hinged Frame With Ridge Connection")
     figure.tight_layout()
     plt.show()
 

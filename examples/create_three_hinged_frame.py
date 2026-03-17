@@ -31,6 +31,7 @@ def main() -> None:
     )
 
     # Explicit validation keeps the example aligned with normal package usage.
+    # The generated frame now also includes explicit ridge member connections.
     frame.validate()
 
     print("Three-hinged frame as dict:")

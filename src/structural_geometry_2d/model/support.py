@@ -16,15 +16,28 @@ _ALLOWED_RESTRAINTS = {"fixed", "free"}
 class Support:
     """Represents support restraints attached to a node by name."""
 
-    def __init__(self, name: str, node_name: str, ux: str, uz: str, ry: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        node_name: str,
+        ux: str,
+        uy: str,
+        uz: str,
+        rx: str,
+        ry: str,
+        rz: str,
+    ) -> None:
         # Support objects are intentionally simple: one support identifier, one
-        # node-name reference, and explicit restraint states for the x
-        # translation, z translation, and y rotation degrees of freedom.
-        self.name = self._validate_name("Support ID", name)
+        # node-name reference, and explicit restraint states for all six global
+        # translational and rotational degrees of freedom.
+        self.name = self._validate_name("Support name", name)
         self.node_name = self._validate_name("Node name", node_name)
         self.ux = self._validate_restraint("ux", ux)
+        self.uy = self._validate_restraint("uy", uy)
         self.uz = self._validate_restraint("uz", uz)
+        self.rx = self._validate_restraint("rx", rx)
         self.ry = self._validate_restraint("ry", ry)
+        self.rz = self._validate_restraint("rz", rz)
 
     def __repr__(self) -> str:
         return (
@@ -32,8 +45,11 @@ class Support:
             f"support_name={self.name!r}, "
             f"node_name={self.node_name!r}, "
             f"ux={self.ux!r}, "
+            f"uy={self.uy!r}, "
             f"uz={self.uz!r}, "
-            f"ry={self.ry!r})"
+            f"rx={self.rx!r}, "
+            f"ry={self.ry!r}, "
+            f"rz={self.rz!r})"
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,8 +58,11 @@ class Support:
             "name": self.name,
             "node_name": self.node_name,
             "ux": self.ux,
+            "uy": self.uy,
             "uz": self.uz,
+            "rx": self.rx,
             "ry": self.ry,
+            "rz": self.rz,
         }
 
     @staticmethod

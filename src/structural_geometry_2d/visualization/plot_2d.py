@@ -3,14 +3,19 @@
 
 from __future__ import annotations
 
+from math import hypot
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.patches import Polygon
+from matplotlib.patches import Circle, Polygon
 
+from structural_geometry_2d.model.connections import Member_connection
+from structural_geometry_2d.model.line_member import LineMember
 from structural_geometry_2d.model.node import Node
 from structural_geometry_2d.model.structural_geometry_2d import StructuralGeometry2D
 from structural_geometry_2d.model.support import Support
+from structural_geometry_2d.visualization.projections import get_plot_coordinates_xz
 
 
 def plot_geometry_2d(
@@ -30,12 +35,15 @@ def plot_geometry_2d(
     geometry.validate()
 
     figure, axes = plt.subplots()
-    # Member and support connectivity is resolved directly by node name.
+    # Member, support, and member-connection relationships are resolved directly
+    # from the model's explicit name-based references.
     node_by_name = {node.name: node for node in geometry.nodes}
+    member_by_name = {member.name: member for member in geometry.members}
 
     reference_length = _get_reference_length(geometry.nodes)
     label_offset = max(reference_length * 0.02, 0.1)
     support_offset = max(reference_length * 0.04, 0.2)
+    connection_radius = max(reference_length * 0.015, 0.12)
 
     for member in geometry.members:
         start_node = node_by_name[member.start_node]
@@ -77,6 +85,14 @@ def plot_geometry_2d(
             supported_node = node_by_name[support.node_name]
             _draw_support_symbol(axes, supported_node, support, support_offset)
 
+    _draw_member_connection_symbols(
+        axes,
+        geometry.connections,
+        member_by_name,
+        node_by_name,
+        connection_radius,
+    )
+
     _configure_axes(
         axes,
         geometry.nodes,
@@ -109,9 +125,9 @@ def _draw_support_symbol(
     support_offset: float,
 ) -> None:
     """Draw a minimal hollow support marker below a node."""
-    # The support convention for x-z models uses ``uz`` as the vertical
-    # translational restraint, so only vertically restrained supports receive
-    # a marker in this simple sketch.
+    # The current x-z projection only visualizes the in-plane translational
+    # restraints. The stored out-of-plane translation and all rotations are
+    # preserved on ``Support`` but are not drawn in this v0.1 sketch.
     if support.uz != "fixed":
         return
 
@@ -139,6 +155,70 @@ def _draw_support_symbol(
             color="black",
             linewidth=1.0,
         )
+
+
+def _draw_member_connection_symbols(
+    axes: Axes,
+    connections: list[Member_connection],
+    member_by_name: dict[str, LineMember],
+    node_by_name: dict[str, Node],
+    connection_radius: float,
+) -> None:
+    """Draw a hollow circle at each member-end connection location."""
+    for connection in connections:
+        member = member_by_name[connection.member]
+        start_node = node_by_name[member.start_node]
+        end_node = node_by_name[member.end_node]
+        for center_x, center_z in _get_connection_symbol_centers(
+            start_node,
+            end_node,
+            connection.position,
+            connection_radius,
+        ):
+            circle = Circle(
+                (center_x, center_z),
+                radius=connection_radius,
+                fill=False,
+                edgecolor="black",
+                linewidth=1.0,
+            )
+            axes.add_patch(circle)
+
+
+def _get_connection_symbol_centers(
+    start_node: Node,
+    end_node: Node,
+    position: str,
+    connection_radius: float,
+) -> list[tuple[float, float]]:
+    """Return inward-shifted connection centers along the member axis."""
+    start_x, start_z = get_plot_coordinates_xz(start_node)
+    end_x, end_z = get_plot_coordinates_xz(end_node)
+    delta_x = end_x - start_x
+    delta_z = end_z - start_z
+    member_length = hypot(delta_x, delta_z)
+
+    if member_length == 0.0:
+        if position == "start":
+            return [(start_x, start_z)]
+        if position == "end":
+            return [(end_x, end_z)]
+        return [(start_x, start_z), (end_x, end_z)]
+
+    # Move the circle slightly inward so the node marker stays visible and the
+    # connection reads as belonging to the member end rather than covering it.
+    inward_offset = min(connection_radius * 2.0, member_length * 0.35)
+    unit_x = delta_x / member_length
+    unit_z = delta_z / member_length
+
+    start_center = (start_x + (unit_x * inward_offset), start_z + (unit_z * inward_offset))
+    end_center = (end_x - (unit_x * inward_offset), end_z - (unit_z * inward_offset))
+
+    if position == "start":
+        return [start_center]
+    if position == "end":
+        return [end_center]
+    return [start_center, end_center]
 
 
 def _configure_axes(

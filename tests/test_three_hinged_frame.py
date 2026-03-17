@@ -36,8 +36,55 @@ def test_generate_three_hinged_frame_creates_expected_support_conditions() -> No
     model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
 
     assert [support.to_dict() for support in model.supports] == [
-        {"id": "S1", "node_name": "N1", "ux": "fixed", "uz": "fixed", "ry": "free"},
-        {"id": "S2", "node_name": "N5", "ux": "free", "uz": "fixed", "ry": "free"},
+        {
+            "name": "S1",
+            "node_name": "N1",
+            "ux": "fixed",
+            "uy": "fixed",
+            "uz": "fixed",
+            "rx": "free",
+            "ry": "free",
+            "rz": "free",
+        },
+        {
+            "name": "S2",
+            "node_name": "N5",
+            "ux": "free",
+            "uy": "fixed",
+            "uz": "fixed",
+            "rx": "free",
+            "ry": "free",
+            "rz": "free",
+        },
+    ]
+
+
+def test_generate_three_hinged_frame_creates_expected_member_connections() -> None:
+    model = generate_three_hinged_frame(span=20.0, eaves_height=5.0, ridge_height=8.0)
+
+    assert [connection.to_dict() for connection in model.connections] == [
+        {
+            "name": "C1",
+            "member": "M2",
+            "position": "end",
+            "ux": "rigid",
+            "uy": "rigid",
+            "uz": "rigid",
+            "rx": "rigid",
+            "ry": "free",
+            "rz": "rigid",
+        },
+        {
+            "name": "C2",
+            "member": "M3",
+            "position": "start",
+            "ux": "rigid",
+            "uy": "rigid",
+            "uz": "rigid",
+            "rx": "rigid",
+            "ry": "free",
+            "rz": "rigid",
+        },
     ]
 
 

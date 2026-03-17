@@ -10,9 +10,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.patches import Polygon
+from matplotlib.patches import Circle, Polygon
 
 from structural_geometry_2d.generators import generate_three_hinged_frame
+from structural_geometry_2d.model.connections import Member_connection
 from structural_geometry_2d.model.line_member import LineMember
 from structural_geometry_2d.model.node import Node
 from structural_geometry_2d.model.structural_geometry_2d import StructuralGeometry2D
@@ -49,13 +50,14 @@ def test_plot_geometry_2d_draws_members_nodes_and_default_node_labels() -> None:
 
         member_lines = [line for line in axes.lines if line.get_linestyle() == "-"]
         node_lines = [line for line in axes.lines if line.get_marker() == "o"]
+        connection_circles = [patch for patch in axes.patches if isinstance(patch, Circle)]
 
         assert len(member_lines) == len(model.members)
         assert len(node_lines) == 1
         assert list(node_lines[0].get_xdata()) == [node.x for node in model.nodes]
         assert list(node_lines[0].get_ydata()) == [node.z for node in model.nodes]
         assert {text.get_text() for text in axes.texts} == {node.name for node in model.nodes}
-        assert len(axes.patches) == 0
+        assert len(connection_circles) == len(model.connections)
     finally:
         plt.close(figure)
 
@@ -68,6 +70,7 @@ def test_plot_geometry_2d_optionally_draws_member_names_and_support_symbols() ->
     try:
         plotted_labels = {text.get_text() for text in axes.texts}
         support_triangles = [patch for patch in axes.patches if isinstance(patch, Polygon)]
+        connection_circles = [patch for patch in axes.patches if isinstance(patch, Circle)]
         support_base_lines = [
             line
             for line in axes.lines
@@ -79,6 +82,7 @@ def test_plot_geometry_2d_optionally_draws_member_names_and_support_symbols() ->
         assert {node.name for node in model.nodes}.issubset(plotted_labels)
         assert {member.name for member in model.members}.issubset(plotted_labels)
         assert len(support_triangles) == len(model.supports)
+        assert len(connection_circles) == len(model.connections)
         assert len(support_base_lines) == 1
     finally:
         plt.close(figure)
@@ -133,6 +137,78 @@ def test_plot_geometry_2d_returns_figure_for_empty_geometry() -> None:
         assert len(axes.lines) == 0
         assert len(axes.patches) == 0
         assert len(axes.texts) == 0
+    finally:
+        plt.close(figure)
+
+
+def test_plot_geometry_2d_draws_connection_circles_slightly_inward_from_generated_ridge() -> None:
+    model = build_frame()
+
+    figure, axes = plot_geometry_2d(model, show_node_names=False, show_member_names=False)
+
+    try:
+        connection_circles = [patch for patch in axes.patches if isinstance(patch, Circle)]
+        plotted_centers = sorted(
+            (round(float(circle.center[0]), 6), round(float(circle.center[1]), 6))
+            for circle in connection_circles
+        )
+
+        assert plotted_centers == [(9.425304, 7.827591), (10.574696, 7.827591)]
+    finally:
+        plt.close(figure)
+
+
+def test_plot_geometry_2d_does_not_draw_connection_circle_without_connections() -> None:
+    model = StructuralGeometry2D(
+        "SimpleFrame",
+        nodes=[Node("N1", 0.0, 0.0), Node("N2", 5.0, 0.0)],
+        members=[LineMember("M1", "N1", "N2", "beam")],
+    )
+
+    figure, axes = plot_geometry_2d(model, show_supports=False)
+
+    try:
+        connection_circles = [patch for patch in axes.patches if isinstance(patch, Circle)]
+        assert len(connection_circles) == 0
+    finally:
+        plt.close(figure)
+
+
+def test_plot_geometry_2d_draws_connection_circle_for_both_member_positions() -> None:
+    model = StructuralGeometry2D(
+        "SimpleFrame",
+        nodes=[Node("N1", 0.0, 0.0), Node("N2", 5.0, 0.0)],
+        members=[LineMember("M1", "N1", "N2", "beam")],
+        connections=[
+            Member_connection(
+                "C1",
+                "M1",
+                "both",
+                "rigid",
+                "rigid",
+                "rigid",
+                "rigid",
+                "free",
+                "rigid",
+            )
+        ],
+    )
+
+    figure, axes = plot_geometry_2d(
+        model,
+        show_node_names=False,
+        show_member_names=False,
+        show_supports=False,
+    )
+
+    try:
+        connection_circles = [patch for patch in axes.patches if isinstance(patch, Circle)]
+        plotted_centers = {
+            (round(float(circle.center[0]), 6), round(float(circle.center[1]), 6))
+            for circle in connection_circles
+        }
+
+        assert plotted_centers == {(0.24, 0.0), (4.76, 0.0)}
     finally:
         plt.close(figure)
 

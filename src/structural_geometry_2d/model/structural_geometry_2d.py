@@ -1,5 +1,5 @@
 # structural_geometry_2d.py
-"""Container model for nodes, members, and supports in v0.1."""
+"""Container model for nodes, members, supports, and connections in v0.1."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from structural_geometry_2d.exceptions import (
     InvalidIdentifierError,
     MissingReferenceError,
 )
+from structural_geometry_2d.model.connections import Member_connection
 from structural_geometry_2d.model.line_member import LineMember
 from structural_geometry_2d.model.node import Node
 from structural_geometry_2d.model.support import Support
@@ -30,6 +31,7 @@ class StructuralGeometry2D:
         nodes: Iterable[Node] | None = None,
         members: Iterable[LineMember] | None = None,
         supports: Iterable[Support] | None = None,
+        connections: Iterable[Member_connection] | None = None,
     ) -> None:
         # The container also has an ID so that a serialized model has a stable
         # top-level name without needing extra wrapper objects.
@@ -40,6 +42,7 @@ class StructuralGeometry2D:
         self.nodes = list(nodes) if nodes is not None else []
         self.members = list(members) if members is not None else []
         self.supports = list(supports) if supports is not None else []
+        self.connections = list(connections) if connections is not None else []
 
     def __repr__(self) -> str:
         return (
@@ -47,7 +50,8 @@ class StructuralGeometry2D:
             f"id={self.name!r}, "
             f"nodes={len(self.nodes)}, "
             f"members={len(self.members)}, "
-            f"supports={len(self.supports)})"
+            f"supports={len(self.supports)}, "
+            f"connections={len(self.connections)})"
         )
 
     def add_node(self, node: Node) -> None:
@@ -68,6 +72,12 @@ class StructuralGeometry2D:
             raise TypeError("support must be an instance of Support.")
         self.supports.append(support)
 
+    def add_connection(self, connection: Member_connection) -> None:
+        """Append a member connection without mutating any other model state."""
+        if not isinstance(connection, Member_connection):
+            raise TypeError("connection must be an instance of Member_connection.")
+        self.connections.append(connection)
+
     def validate(self) -> None:
         """Validate container-level uniqueness and name-based reference integrity."""
         self._raise_if_duplicates(
@@ -81,9 +91,11 @@ class StructuralGeometry2D:
             identifier_getter=lambda member: member.name,
         )
         self._raise_if_duplicates(self.supports, "support")
+        self._raise_if_duplicates(self.connections, "connection")
 
         # Members and supports reference nodes only by node name in v0.1.
         node_names = {node.name for node in self.nodes}
+        member_names = {member.name for member in self.members}
 
         for member in self.members:
             if member.start_node == member.end_node:
@@ -111,6 +123,14 @@ class StructuralGeometry2D:
                 node_names,
             )
 
+        for connection in self.connections:
+            self._raise_if_missing_reference(
+                connection.name,
+                "member",
+                connection.member,
+                member_names,
+            )
+
     def to_dict(self) -> dict[str, Any]:
         """Return a fully serializable representation of the container."""
         return {
@@ -118,6 +138,7 @@ class StructuralGeometry2D:
             "nodes": [node.to_dict() for node in self.nodes],
             "members": [member.to_dict() for member in self.members],
             "supports": [support.to_dict() for support in self.supports],
+            "connections": [connection.to_dict() for connection in self.connections],
         }
 
     def to_json(self, *, indent: int = 2) -> str:
@@ -152,7 +173,7 @@ class StructuralGeometry2D:
         for item in items:
             item_name = get_identifier(item)
             if item_name in seen_names:
-                duplicate_field = "name" if item_label in {"node", "member"} else "ID"
+                duplicate_field = "name" if item_label in {"node", "member", "connection"} else "ID"
                 raise DuplicateIdentifierError(
                     f"Duplicate {item_label} {duplicate_field} detected: {item_name!r}."
                 )
